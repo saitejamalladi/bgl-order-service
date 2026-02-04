@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { ProductResponseDto } from './dto/product-response.dto';
 import { Product } from './product.entity';
 import { productsConfig } from '../config/products.config';
 
@@ -15,16 +16,26 @@ export class ProductsService {
     );
   }
 
-  findAll(): Product[] {
-    return this.products;
+  findAll(): ProductResponseDto[] {
+    return this.products.map(product => ({
+      code: product.code,
+      name: product.name,
+      price: product.price,
+      packaging: productsConfig.packaging[product.code] || [],
+    }));
   }
 
-  findOne(code: string): Product {
+  findOne(code: string): ProductResponseDto {
     const product = this.products.find((p) => p.code === code);
     if (!product) {
       throw new NotFoundException(`Product with code '${code}' not found`);
     }
-    return product;
+    return {
+      code: product.code,
+      name: product.name,
+      price: product.price,
+      packaging: productsConfig.packaging[product.code] || [],
+    };
   }
 
   create(createProductDto: CreateProductDto): Product {
