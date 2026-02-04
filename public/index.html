@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BGL Order Service - API Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .product-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #fafafa;
+        }
+        .product-code {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .price {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #218838;
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #545b62;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .links {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 15px;
+            font-weight: 500;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+        .example-requests {
+            margin-top: 20px;
+        }
+        .example-btn {
+            background: #17a2b8;
+            margin: 2px;
+        }
+        .example-btn:hover {
+            background: #138496;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🛒 BGL Order Service</h1>
+        <p>Test the grocery order calculation API</p>
+    </div>
+
+    <div class="container">
+        <div class="section">
+            <h2>📋 Available Products</h2>
+            <div id="products-list">
+                <p>Loading products...</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🧮 Order Calculator</h2>
+            <form id="order-form">
+                <div class="form-group">
+                    <label for="order-request">Order Request (JSON):</label>
+                    <textarea id="order-request" rows="8" placeholder='{
+  "items": [
+    {"productCode": "CE", "quantity": 10},
+    {"productCode": "HM", "quantity": 14},
+    {"productCode": "SS", "quantity": 3}
+  ]
+}'></textarea>
+                </div>
+                <button type="submit">Calculate Order</button>
+                <button type="button" class="secondary" onclick="clearForm()">Clear</button>
+            </form>
+
+            <div class="example-requests">
+                <p><strong>Quick Examples:</strong></p>
+                <button class="example-btn" onclick="loadExample('basic')">Basic Order</button>
+                <button class="example-btn" onclick="loadExample('large')">Large Order</button>
+                <button class="example-btn" onclick="loadExample('single')">Single Item</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📊 Results</h2>
+        <div id="results" class="result">
+            Results will appear here after calculation...
+        </div>
+    </div>
+
+    <div class="links">
+        <a href="/api/docs" target="_blank">📖 API Documentation</a>
+        <a href="https://github.com/saitejamalladi/bgl-order-service" target="_blank">📂 GitHub Repository</a>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        // Load products on page load
+        document.addEventListener('DOMContentLoaded', loadProducts);
+
+        // Handle form submission
+        document.getElementById('order-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await calculateOrder();
+        });
+
+        async function loadProducts() {
+            try {
+                const response = await fetch(`${API_BASE}/products`);
+                const products = await response.json();
+                displayProducts(products);
+            } catch (error) {
+                document.getElementById('products-list').innerHTML =
+                    '<p class="error">Failed to load products. Make sure the API is running.</p>';
+            }
+        }
+
+        function displayProducts(products) {
+            const container = document.getElementById('products-list');
+            container.innerHTML = products.map(product => `
+                <div class="product-card">
+                    <div class="product-code">${product.code} - ${product.name}</div>
+                    <div>Unit Price: <span class="price">$${product.price}</span></div>
+                    <div><strong>Bundle Options:</strong></div>
+                    <ul>
+                        ${product.packaging.map(pkg =>
+                            `<li>${pkg.quantity} items = <span class="price">$${pkg.price}</span></li>`
+                        ).join('')}
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        async function calculateOrder() {
+            const requestText = document.getElementById('order-request').value.trim();
+            const resultsDiv = document.getElementById('results');
+
+            if (!requestText) {
+                resultsDiv.className = 'result error';
+                resultsDiv.textContent = 'Please enter an order request.';
+                return;
+            }
+
+            try {
+                const orderRequest = JSON.parse(requestText);
+                resultsDiv.className = 'result';
+                resultsDiv.textContent = 'Calculating...';
+
+                const response = await fetch(`${API_BASE}/orders/calculate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(orderRequest)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || `HTTP ${response.status}`);
+                }
+
+                resultsDiv.className = 'result success';
+                resultsDiv.textContent = JSON.stringify(result, null, 2);
+
+            } catch (error) {
+                resultsDiv.className = 'result error';
+                if (error.name === 'SyntaxError') {
+                    resultsDiv.textContent = 'Invalid JSON format. Please check your request.';
+                } else {
+                    resultsDiv.textContent = `Error: ${error.message}`;
+                }
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('order-request').value = '';
+            document.getElementById('results').className = 'result';
+            document.getElementById('results').textContent = 'Results will appear here after calculation...';
+        }
+
+        function loadExample(type) {
+            const examples = {
+                basic: {
+                  "items": [
+                    {"productCode": "CE", "quantity": 10},
+                    {"productCode": "HM", "quantity": 14},
+                    {"productCode": "SS", "quantity": 3}
+                  ]
+                },
+                large: {
+                  "items": [
+                    {"productCode": "CE", "quantity": 25},
+                    {"productCode": "HM", "quantity": 30},
+                    {"productCode": "SS", "quantity": 10}
+                  ]
+                },
+                single: {
+                  "items": [
+                    {"productCode": "HM", "quantity": 14}
+                  ]
+                }
+            };
+
+            document.getElementById('order-request').value = JSON.stringify(examples[type], null, 2);
+        }
+    </script>
+</body>
+</html>

@@ -1,12 +1,12 @@
 import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
-
   @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  getTestPage(): string {
+    const htmlPath = join(__dirname, '..', 'public', 'index.html');
+    return readFileSync(htmlPath, 'utf8');
   }
 }
