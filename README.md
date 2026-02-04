@@ -1,98 +1,142 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# BGL Order Service
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A NestJS-based API for calculating optimal grocery order packaging and pricing with bundle discounts.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Features
 
-## Description
+- **Product Management**: View available products with pricing and bundle options
+- **Order Calculation**: Minimize package count using greedy algorithm
+- **Interactive API Docs**: Swagger/OpenAPI documentation at `/api/docs`
+- **HTML Test Page**: User-friendly interface at root path `/`
+- **Comprehensive Testing**: Unit tests, integration tests, and E2E tests
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📋 Available Products
 
-## Project setup
+| Code | Name | Unit Price | Bundle Options |
+|------|------|------------|----------------|
+| CE | Cheese | $7.95 | 5×$20.95, 3×$14.95 |
+| HM | Ham | $7.95 | 8×$40.95, 5×$29.95, 2×$13.95 |
+| SS | Soy Sauce | $11.95 | Individual only |
+
+## 🛠️ Installation
 
 ```bash
-$ npm install
+# Install dependencies
+npm install
+
+# Start development server
+npm run start:dev
+
+# Application will be available at:
+# - API: http://localhost:3000
+# - Swagger Docs: http://localhost:3000/api/docs
+# - HTML Test Page: http://localhost:3000
 ```
 
-## Compile and run the project
+## 📖 API Usage
+
+### Calculate Order
+
+**Endpoint:** `POST /orders/calculate`
+
+**Request:**
+```json
+{
+  "items": [
+    {"productCode": "CE", "quantity": 10},
+    {"productCode": "HM", "quantity": 14},
+    {"productCode": "SS", "quantity": 3}
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "items": [
+    {
+      "productCode": "CE",
+      "productName": "Cheese",
+      "orderedQuantity": 10,
+      "totalCost": 41.90,
+      "breakdown": [
+        {"quantity": 2, "bundleSize": 5, "unitPrice": 20.95, "totalPrice": 41.90}
+      ]
+    }
+  ],
+  "grandTotal": 156.60
+}
+```
+
+## 🧪 Testing
 
 ```bash
-# development
-$ npm run start
+# Run all tests
+npm run test
 
-# watch mode
-$ npm run start:dev
+# Run E2E tests
+npm run test:e2e
 
-# production mode
-$ npm run start:prod
+# Run with coverage
+npm run test:cov
 ```
 
-## Run tests
+## 🏗️ Architecture
+
+- **Framework**: NestJS with TypeScript
+- **Validation**: class-validator & class-transformer
+- **Documentation**: Swagger/OpenAPI
+- **Testing**: Jest with Supertest
+- **Algorithm**: Greedy approach for minimal package calculation
+
+## 📁 Project Structure
+
+```
+src/
+├── app.controller.ts      # HTML test page
+├── app.module.ts          # Root module
+├── main.ts               # Application bootstrap
+├── products/             # Product management
+│   ├── products.service.ts
+│   ├── products.controller.ts
+│   ├── products.module.ts
+│   └── dto/
+├── orders/               # Order calculation
+│   ├── orders.service.ts
+│   ├── orders.controller.ts
+│   ├── orders.module.ts
+│   └── dto/
+└── config/               # Product configuration
+```
+
+## 🎯 Algorithm Explanation
+
+The order calculation uses a **greedy algorithm** to minimize the number of packages:
+
+1. Sort packaging options by bundle size (largest first)
+2. For each bundle size, calculate maximum packages that fit
+3. Subtract used quantity from remaining total
+4. Handle remainder with individual unit pricing
+
+**Example:** 14 Ham items
+- 1×8 bundle ($40.95) = 8 items
+- 1×5 bundle ($29.95) = 5 items
+- 1×1 item ($7.95) = 1 item
+- **Total:** $78.85 (vs $98.65 for 2×5 + 4×1)
+
+## 🔧 Development
 
 ```bash
-# unit tests
-$ npm run test
+# Build for production
+npm run build
 
-# e2e tests
-$ npm run test:e2e
+# Start production server
+npm run start:prod
 
-# test coverage
-$ npm run test:cov
+# Lint code
+npm run lint
+
+# Format code
+npm run format
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
