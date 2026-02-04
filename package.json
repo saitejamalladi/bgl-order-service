@@ -1,10 +1,11 @@
 {
   "name": "bgl-order-service",
-  "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "version": "1.0.0",
+  "description": "NestJS API for calculating optimal grocery order packaging and pricing with bundle discounts",
+  "author": "BGL Assessment",
   "private": true,
   "license": "UNLICENSED",
+  "keywords": ["nestjs", "typescript", "api", "grocery", "order", "bundle", "discount", "greedy-algorithm"],
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
